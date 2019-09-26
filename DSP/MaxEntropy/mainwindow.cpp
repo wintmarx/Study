@@ -144,6 +144,7 @@ void MainWindow::on_genButton_clicked()
     for(int i = 0; i < signalLength; i++)
     {
         outputValues[i] += noiseValues[i];
+        outputValues[i] = fabs(outputValues[i]);
         ui->noisyPlot->graph(0)->addData(i,  outputValues[i]);
     }
 
