@@ -19,7 +19,8 @@ public:
     virtual ~GLWidget() override;
     void setViewMatrix(const double *mat);
     void DrawTriangle(const glm::dvec3 &p, const glm::vec3 &c);
-    void DrawCube(const glm::dvec3 &p, const glm::vec3 &c, double s = 1.);
+    void DrawCube(const glm::dvec3 &p, const glm::vec3 &c, double s = 1., bool lines = false);
+    void DrawLine(const glm::dvec3 &b, const glm::dvec3 &e, const glm::vec3 &c);
     glm::ivec4 viewport;
     glm::dmat4 proj;
 

@@ -28,14 +28,14 @@ SOURCES += \
         main.cpp \
         mainwindow.cpp \
         glwidget.cpp \
-        atom.cpp \
-        simulation.cpp
+        simulation.cpp \
+    crystal.cpp
 
 HEADERS += \
         mainwindow.h \
         glwidget.h \
-        atom.h \
-        simulation.h
+        simulation.h \
+    crystal.h
 
 FORMS += \
         mainwindow.ui

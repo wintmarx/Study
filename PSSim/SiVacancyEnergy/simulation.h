@@ -9,7 +9,7 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/quaternion.hpp"
-#include "atom.h"
+#include "crystal.h"
 #include <mutex>
 
 struct Camera
@@ -50,7 +50,7 @@ private:
     void Update();
     void HandleInput();
 
-    Atom atom;
+    Crystal crystal;
 
     GLWidget *widget = nullptr;
     const glm::dvec3 up = glm::dvec3(0., -1., 0.);

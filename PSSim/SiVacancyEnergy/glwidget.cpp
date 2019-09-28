@@ -33,8 +33,13 @@ void GLWidget::DrawTriangle(const glm::dvec3 &p, const glm::vec3 &c)
     glVertex3d(p.x + 0., p.y + 0.5, p.z + 1.);
 }
 
-void GLWidget::DrawCube(const glm::dvec3 &p, const glm::vec3 &c, double s)
+void GLWidget::DrawCube(const glm::dvec3 &p, const glm::vec3 &c, double s, bool lines)
 {
+    if (lines)
+    {
+        glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+        glDisable(GL_CULL_FACE);
+    }
     glBegin(GL_QUADS);
     s *= 0.5;
     glColor3fv(&c[0]);
@@ -79,69 +84,22 @@ void GLWidget::DrawCube(const glm::dvec3 &p, const glm::vec3 &c, double s)
     glVertex3d(p.x + s, p.y - s, p.z + s);
     glVertex3d(p.x + s, p.y - s, p.z - s);
     glEnd();
+
+    if (lines)
+    {
+        glEnable(GL_CULL_FACE);
+        glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+    }
 }
 
-/*void DrawCell(const glm::dvec3 &p, double size = 1.)
+void GLWidget::DrawLine(const glm::dvec3 &b, const glm::dvec3 &e, const glm::vec3 &c)
 {
-    glBegin(GL_QUADS);
-    DrawCube(p, 0.04 * size);
-    DrawCube(p + glm::dvec3(.50 * size, .50 * size, .00 * size), 0.04 * size);
-    DrawCube(p + glm::dvec3(.50 * size, .00 * size, .50 * size), 0.04 * size);
-    DrawCube(p + glm::dvec3(.00 * size, .50 * size, .50 * size), 0.04 * size);
-    DrawCube(p + glm::dvec3(.25 * size, .25 * size, .25 * size), 0.04 * size);
-    DrawCube(p + glm::dvec3(.25 * size, .75 * size, .75 * size), 0.04 * size);
-    DrawCube(p + glm::dvec3(.75 * size, .75 * size, .25 * size), 0.04 * size);
-    DrawCube(p + glm::dvec3(.75 * size, .25 * size, .75 * size), 0.04 * size);
-    glEnd();
-
     glBegin(GL_LINES);
-    glColor3f(1., 0., 0.);
-    glVertex3dv(&p[0]);
-    glVertex3dv(&(p + glm::dvec3(.25 * size, .25 * size, .25 * size))[0]);
-
-    glVertex3dv(&(p + glm::dvec3(.25 * size, .25 * size, .25 * size))[0]);
-    glVertex3dv(&(p + glm::dvec3(.50 * size, .50 * size, .00 * size))[0]);
-
-    glVertex3dv(&(p + glm::dvec3(.50 * size, .50 * size, .00 * size))[0]);
-    glVertex3dv(&(p + glm::dvec3(.75 * size, .75 * size, .25 * size))[0]);
-
-    glVertex3dv(&(p + glm::dvec3(.25 * size, .25 * size, .25 * size))[0]);
-    glVertex3dv(&(p + glm::dvec3(.00 * size, .50 * size, .50 * size))[0]);
-
-    glVertex3dv(&(p + glm::dvec3(.00 * size, .50 * size, .50 * size))[0]);
-    glVertex3dv(&(p + glm::dvec3(.25 * size, .75 * size, .75 * size))[0]);
-
-    glVertex3dv(&(p + glm::dvec3(.25 * size, .75 * size, .75 * size))[0]);
-    glVertex3dv(&(p + glm::dvec3(.50 * size,       size, .50 * size))[0]);
-
-    glVertex3dv(&(p + glm::dvec3(.25 * size, .75 * size, .75 * size))[0]);
-    glVertex3dv(&(p + glm::dvec3(.50 * size, .50 * size,       size))[0]);
-
-    glVertex3dv(&(p + glm::dvec3(.25 * size, .25 * size, .25 * size))[0]);
-    glVertex3dv(&(p + glm::dvec3(.50 * size, .00 * size, .50 * size))[0]);
-
-    glVertex3dv(&(p + glm::dvec3(.50 * size, .00 * size, .50 * size))[0]);
-    glVertex3dv(&(p + glm::dvec3(.75 * size, .25 * size, .75 * size))[0]);
-
-    glVertex3dv(&(p + glm::dvec3(.75 * size, .25 * size, .75 * size))[0]);
-    glVertex3dv(&(p + glm::dvec3(      size, .00 * size,       size))[0]);
-
-    glVertex3dv(&(p + glm::dvec3(.75 * size, .25 * size, .75 * size))[0]);
-    glVertex3dv(&(p + glm::dvec3(      size, .50 * size, .50 * size))[0]);
-
-    glVertex3dv(&(p + glm::dvec3(      size, .50 * size, .50 * size))[0]);
-    glVertex3dv(&(p + glm::dvec3(.75 * size, .75 * size, .25 * size))[0]);
-
-    glVertex3dv(&(p + glm::dvec3(.75 * size, .75 * size, .25 * size))[0]);
-    glVertex3dv(&(p + glm::dvec3(      size,       size, .00 * size))[0]);
-
-    glVertex3dv(&(p + glm::dvec3(.75 * size, .75 * size, .25 * size))[0]);
-    glVertex3dv(&(p + glm::dvec3(.50 * size,       size, .50 * size))[0]);
-
-    glVertex3dv(&(p + glm::dvec3(.75 * size, .25 * size, .75 * size))[0]);
-    glVertex3dv(&(p + glm::dvec3(.50 * size, .50 * size,       size))[0]);
+    glColor3fv(&c[0]);
+    glVertex3dv(&b[0]);
+    glVertex3dv(&e[0]);
     glEnd();
-}*/
+}
 
 void GLWidget::setViewMatrix(const double *view)
 {

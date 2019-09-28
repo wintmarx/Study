@@ -1,6 +1,7 @@
 #include "simulation.h"
 
 Simulation::Simulation(GLWidget *widget) :
+    crystal({0., 0., 0.}, {3, 3, 3}),
     angleCoeff(1.),
     mouse(0., 0.)
 {
@@ -28,8 +29,6 @@ Simulation::Simulation(GLWidget *widget) :
     connect(widget, SIGNAL (mouseReleaseEventSignal(QMouseEvent*)), this, SLOT (mouseReleaseEvent(QMouseEvent*)));
     connect(widget, SIGNAL (Resized(int, int)), this, SLOT (onWidgetResized(int, int)));
     connect(widget, SIGNAL (Draw()), this, SLOT (Draw()));
-
-    atom.p.z = 10.;
 }
 
 Simulation::~Simulation()
@@ -91,7 +90,23 @@ void Simulation::Draw()
 {
     mutex.lock();
     widget->setViewMatrix(&view[0][0]);
-    widget->DrawCube(atom.p, glm::vec3(0., 0., 1.));
+    for(uint i = 0; i < crystal.atoms.size(); i++)
+    {
+        glm::vec3 c(0.f, 0.f, 0.f);
+        if (crystal.atoms[i].isBoundary)
+        {
+            c.r = 1.f;
+        }
+        widget->DrawCube(crystal.atoms[i].p, c, Crystal::atomSize);
+    }
+    for(uint i = 0; i < crystal.bonds.size(); i++)
+    {
+        const std::pair<uint, uint> &b = crystal.bonds[i];
+        const std::vector<Atom> &v = crystal.atoms;
+        widget->DrawLine(v[b.first].p, v[b.second].p, glm::vec3(0.3f, 0.3f, 0.3f));
+    }
+    widget->DrawCube(crystal.p + glm::dvec3(crystal.sizeInCells.x * Crystal::cellSize / 2.), glm::vec3(0.3f, 0.3f, 0.3f), crystal.sizeInCells.x * Crystal::cellSize, true);
+
     widget->update();
     mutex.unlock();
 }
