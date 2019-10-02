@@ -1,5 +1,8 @@
 #include "glwidget.h"
 
+#include <gl/GLU.h>
+#include <gl/GL.h>
+
 GLWidget::GLWidget(QWidget *parent) :
     QOpenGLWidget (parent),
     viewport(0),
