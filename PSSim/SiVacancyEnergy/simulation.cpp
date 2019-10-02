@@ -1,7 +1,7 @@
 #include "simulation.h"
 
 Simulation::Simulation(GLWidget *widget) :
-    crystal({0., 0., 0.}, {3, 3, 3}),
+    crystal({0., 0., 0.}, {2, 2, 2}),
     angleCoeff(1.),
     mouse(0., 0.)
 {
@@ -55,14 +55,62 @@ void Simulation::MainLoop()
 
 void Simulation::Update()
 {
-    mutex.lock();
+    cameraMutex.lock();
     view = glm::lookAtRH(camera.p, camera.p + camera.d, up);
-    mutex.unlock();
+    cameraMutex.unlock();
+    aMutex.lock();
+    for(Atom &a : crystal.atoms) {
+        /*if (a.isBoundary)
+        {
+            continue;
+        }*/
+        a.u = 0.;
+        const auto& neighboors = a.neighboors;
+        for(uint j = 0; j < neighboors.size(); j++) {
+            a.u += TwoParticleIteractionEnergy(crystal, a.p, neighboors[j]->p);
+            for(uint k = j + 1; k < neighboors.size(); k++) {
+                a.u += ThreeParticleIteractionEnergy(crystal, a.p, neighboors[j]->p, neighboors[k]->p);
+            }
+        }
+        if (a.u > crystal.maxEnergy)
+        {
+            crystal.maxEnergy = a.u;
+        }
+    }
+    aMutex.unlock();
+}
+
+double Simulation::TwoParticleIteractionEnergy(const Crystal &c, const glm::dvec3 &r1, const glm::dvec3 &r2)
+{
+    double d = glm::length(r1 - r2);
+    return c.epsilon * c.A * (c.B * std::pow(d/c.zeroPotentialR, -c.r) - std::pow(d/c.zeroPotentialR, -c.q)) * std::exp(c.zeroPotentialR/(d - c.potentialCutoffR));
+}
+
+double h(const Crystal &c, double d12, double d13, double cos213)
+{
+    if (d12 >= c.potentialCutoffR || d13 >= c.potentialCutoffR)
+    {
+        return 0.;
+    }
+    return c.lambda * std::exp(c.gamma * c.zeroPotentialR * (1./(d12 - c.potentialCutoffR) + 1./(d13 - c.potentialCutoffR))) * (cos213 + 1./3.) * (cos213 + 1./3.);
+}
+
+double cos(double a, double b, double c)
+{
+    return 0.5 * (b * b + c * c - a * a) / (b * c);
+}
+
+double Simulation::ThreeParticleIteractionEnergy(const Crystal &c, const glm::dvec3 &r1, const glm::dvec3 &r2, const glm::dvec3 &r3)
+{
+    double d12 = glm::length(r1 - r2);
+    double d23 = glm::length(r2 - r3);
+    double d31 = glm::length(r3 - r1);
+    return h(c, d12, d31, cos(d23, d31, d12)) + h(c, d12, d23, cos(d31, d12, d23)) + h(c, d31, d23, cos(d12, d23, d31));
 }
 
 void Simulation::HandleInput()
 {
-    mutex.lock();
+    cameraMutex.lock();
     if(keysState[KeyToAddr(Qt::Key_W)])
     {
         camera.p += camera.d * camera.v;
@@ -83,84 +131,83 @@ void Simulation::HandleInput()
     {
         camera.p -= camera.u * camera.v;
     }
-    mutex.unlock();
+    cameraMutex.unlock();
 }
 
 void Simulation::Draw()
 {
-    mutex.lock();
+    glm::vec3 c;
+    glm::vec3 bColor(0.3f, 0.3f, 0.3f);
+    const std::vector<Atom> &atoms = crystal.atoms;
+    cameraMutex.lock();
     widget->setViewMatrix(&view[0][0]);
-    for(uint i = 0; i < crystal.atoms.size(); i++)
+    cameraMutex.unlock();
+    aMutex.lock();
+    for(const Atom& a : atoms)
     {
-        glm::vec3 c(0.f, 0.f, 0.f);
-        if (crystal.atoms[i].isBoundary)
+        float rate = crystal.maxEnergy > 0. ? a.u/crystal.maxEnergy : 0.;
+        c.r = rate;
+        c.g = rate;
+        c.b = rate;
+        if (a.isBoundary)
         {
             c.r = 1.f;
         }
-        widget->DrawCube(crystal.atoms[i].p, c, Crystal::atomSize);
+        widget->DrawCube(a.p, c, Crystal::atomSize);
     }
-    for(uint i = 0; i < crystal.bonds.size(); i++)
+    for(const auto& b : crystal.bonds)
     {
-        const std::pair<uint, uint> &b = crystal.bonds[i];
-        const std::vector<Atom> &v = crystal.atoms;
-        widget->DrawLine(v[b.first].p, v[b.second].p, glm::vec3(0.3f, 0.3f, 0.3f));
+        widget->DrawLine(atoms[b.first].p, atoms[b.second].p, bColor);
     }
-    widget->DrawCube(crystal.p + glm::dvec3(crystal.sizeInCells.x * Crystal::cellSize / 2.), glm::vec3(0.3f, 0.3f, 0.3f), crystal.sizeInCells.x * Crystal::cellSize, true);
-
+    //widget->DrawCube(crystal.p + glm::dvec3(crystal.sizeInCells.x * Crystal::latticeConst / 2.), glm::vec3(0.3f, 0.3f, 0.3f), crystal.sizeInCells.x * Crystal::latticeConst, true);
+    aMutex.unlock();
     widget->update();
-    mutex.unlock();
 }
 
 void Simulation::onWidgetResized(int w, int h)
 {
-    mutex.lock();
     angleCoeff.x = 2. * glm::two_pi<double>() / double(w);
     angleCoeff.y = 2. * glm::two_pi<double>() / double(h);
-    mutex.unlock();
 }
 
 void Simulation::wheelEvent(QWheelEvent *event)
 {
-    mutex.lock();
+    cameraMutex.lock();
     camera.p += camera.d * double(event->angleDelta().y())/8.;
-    mutex.unlock();
+    cameraMutex.unlock();
 }
 
 void Simulation::keyPressEvent(QKeyEvent *event)
 {
-    mutex.lock();
+    cameraMutex.lock();
     keysState[KeyToAddr(event->key())] = true;
-    mutex.unlock();
+    cameraMutex.unlock();
 }
 
 void Simulation::keyReleaseEvent(QKeyEvent *event)
 {
-    mutex.lock();
+    cameraMutex.lock();
     keysState[KeyToAddr(event->key())] = false;
-    mutex.unlock();
+    cameraMutex.unlock();
 }
 
 void Simulation::mouseMoveEvent(QMouseEvent *event)
 {
-    mutex.lock();
+    cameraMutex.lock();
     camera.r = glm::normalize(glm::cross(up, camera.d));
     glm::qua<double> r = glm::angleAxis((event->pos().y() - mouse.y()) * angleCoeff.y, camera.r);
     r += glm::angleAxis((mouse.x() - event->pos().x()) * angleCoeff.x, up);
     camera.d = camera.d * r;
+    cameraMutex.unlock();
     mouse = event->pos();
-    mutex.unlock();
 }
 
 void Simulation::mousePressEvent(QMouseEvent *event)
 {
-    mutex.lock();
     mouse = event->pos();
-    mutex.unlock();
 }
 
 void Simulation::mouseReleaseEvent(QMouseEvent *event)
 {
-    mutex.lock();
     mouse = event->pos();
-    mutex.unlock();
 }

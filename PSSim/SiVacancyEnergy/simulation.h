@@ -49,6 +49,8 @@ private:
     inline int AddrToKey(int addr) { return addr | ((0x0100 & addr) << 2); }
     void Update();
     void HandleInput();
+    double TwoParticleIteractionEnergy(const Crystal &c, const glm::dvec3 &r1, const glm::dvec3 &r2);
+    double ThreeParticleIteractionEnergy(const Crystal &c, const glm::dvec3 &r1, const glm::dvec3 &r2, const glm::dvec3 &r3);
 
     Crystal crystal;
 
@@ -64,7 +66,8 @@ private:
     static const int mouseStates = 3;
     bool mouseState[mouseStates];
     QPoint mouse;
-    std::mutex mutex;
+    std::mutex aMutex;
+    std::mutex cameraMutex;
 };
 
 #endif // SIMULATION_H
