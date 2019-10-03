@@ -20,7 +20,8 @@ public:
 class Crystal
 {
     public:
-    double maxEnergy = 0;
+    double maxEnergy = -DBL_MAX;
+    double minEnergy = DBL_MAX;
     static constexpr uint maxNeighboors = 20;
     static constexpr double zeroPotentialR = 0.2095;
     static constexpr double potentialCutoffR = 1.8 * zeroPotentialR;

@@ -1,13 +1,13 @@
 #include "simulation.h"
 
 Simulation::Simulation(GLWidget *widget) :
-    crystal({0., 0., 0.}, {2, 2, 2}),
+    crystal({0., 0., 10.}, {3, 3, 3}),
     angleCoeff(1.),
     mouse(0., 0.)
 {
-    camera.p = glm::dvec3(0., 0., 20.);
+    camera.p = glm::dvec3(0., 0., 30.);
     camera.d = glm::dvec3(0., 0., -1.);
-    camera.u = glm::dvec3(0., -1., 0.);
+    camera.u = glm::dvec3(0., 1., 0.);
     camera.r = glm::dvec3(1., 0., 0.);
 
     for (int i = 0; i < keysStates; i++)
@@ -76,6 +76,10 @@ void Simulation::Update()
         {
             crystal.maxEnergy = a.u;
         }
+        if (a.u < crystal.minEnergy)
+        {
+            crystal.minEnergy = a.u;
+        }
     }
     aMutex.unlock();
 }
@@ -86,7 +90,7 @@ double Simulation::TwoParticleIteractionEnergy(const Crystal &c, const glm::dvec
     return c.epsilon * c.A * (c.B * std::pow(d/c.zeroPotentialR, -c.r) - std::pow(d/c.zeroPotentialR, -c.q)) * std::exp(c.zeroPotentialR/(d - c.potentialCutoffR));
 }
 
-double h(const Crystal &c, double d12, double d13, double cos213)
+inline double h(const Crystal &c, double d12, double d13, double cos213)
 {
     if (d12 >= c.potentialCutoffR || d13 >= c.potentialCutoffR)
     {
@@ -95,7 +99,7 @@ double h(const Crystal &c, double d12, double d13, double cos213)
     return c.lambda * std::exp(c.gamma * c.zeroPotentialR * (1./(d12 - c.potentialCutoffR) + 1./(d13 - c.potentialCutoffR))) * (cos213 + 1./3.) * (cos213 + 1./3.);
 }
 
-double cos(double a, double b, double c)
+inline double cos(double a, double b, double c)
 {
     return 0.5 * (b * b + c * c - a * a) / (b * c);
 }
@@ -129,7 +133,7 @@ void Simulation::HandleInput()
     }
     if(keysState[KeyToAddr(Qt::Key_Space)])
     {
-        camera.p -= camera.u * camera.v;
+        camera.p += camera.u * camera.v;
     }
     cameraMutex.unlock();
 }
@@ -145,14 +149,15 @@ void Simulation::Draw()
     aMutex.lock();
     for(const Atom& a : atoms)
     {
-        float rate = crystal.maxEnergy > 0. ? a.u/crystal.maxEnergy : 0.;
-        c.r = rate;
-        c.g = rate;
-        c.b = rate;
-        if (a.isBoundary)
+        double range = crystal.maxEnergy - crystal.minEnergy;
+        float rate = (a.u - crystal.minEnergy) / range;
+        c.r = a.u >= 0. ? rate : 0;
+        c.g = 0.;
+        c.b = a.u < 0. ? rate : 0;
+        /*if (a.isBoundary)
         {
             c.r = 1.f;
-        }
+        }*/
         widget->DrawCube(a.p, c, Crystal::atomSize);
     }
     for(const auto& b : crystal.bonds)
@@ -166,8 +171,8 @@ void Simulation::Draw()
 
 void Simulation::onWidgetResized(int w, int h)
 {
-    angleCoeff.x = 2. * glm::two_pi<double>() / double(w);
-    angleCoeff.y = 2. * glm::two_pi<double>() / double(h);
+    angleCoeff.x = 0.5 * glm::two_pi<double>() / double(w);
+    angleCoeff.y = 0.5 * glm::two_pi<double>() / double(h);
 }
 
 void Simulation::wheelEvent(QWheelEvent *event)
@@ -179,24 +184,20 @@ void Simulation::wheelEvent(QWheelEvent *event)
 
 void Simulation::keyPressEvent(QKeyEvent *event)
 {
-    cameraMutex.lock();
     keysState[KeyToAddr(event->key())] = true;
-    cameraMutex.unlock();
 }
 
 void Simulation::keyReleaseEvent(QKeyEvent *event)
 {
-    cameraMutex.lock();
     keysState[KeyToAddr(event->key())] = false;
-    cameraMutex.unlock();
 }
 
 void Simulation::mouseMoveEvent(QMouseEvent *event)
 {
     cameraMutex.lock();
-    camera.r = glm::normalize(glm::cross(up, camera.d));
+    camera.r = glm::normalize(glm::cross(camera.d, up));
     glm::qua<double> r = glm::angleAxis((event->pos().y() - mouse.y()) * angleCoeff.y, camera.r);
-    r += glm::angleAxis((mouse.x() - event->pos().x()) * angleCoeff.x, up);
+    r *= glm::angleAxis((event->pos().x() - mouse.x()) * angleCoeff.x, up);
     camera.d = camera.d * r;
     cameraMutex.unlock();
     mouse = event->pos();

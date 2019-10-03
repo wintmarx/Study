@@ -1,7 +1,7 @@
 #include "glwidget.h"
 
-#include <gl/GLU.h>
-#include <gl/GL.h>
+#include <GL/glu.h>
+#include <GL/gl.h>
 
 GLWidget::GLWidget(QWidget *parent) :
     QOpenGLWidget (parent),
@@ -145,7 +145,8 @@ void GLWidget::resizeGL(int w, int h)
     viewport.z = w;
     viewport.w = h;
     glMatrixMode(GL_PROJECTION);
-    proj = glm::perspectiveRH_NO(75., double(w)/ h, 0.1, 100.);
+    proj = glm::perspectiveRH_NO(45., double(w)/ h, 0.1, 100.);
+    //proj = glm::frustumRH_NO(-1., 1., -1., 1., 1., 100.);
     glLoadMatrixd(&proj[0][0]);
     emit Resized(w, h);
 }

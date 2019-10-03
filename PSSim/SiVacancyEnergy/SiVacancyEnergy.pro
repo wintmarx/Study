@@ -23,6 +23,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 CONFIG += c++11
+QMAKE_CXXFLAGS += -ffast-math -funsafe-math-optimizations -msse4.2
 
 SOURCES += \
         main.cpp \
@@ -40,7 +41,7 @@ HEADERS += \
 FORMS += \
         mainwindow.ui
 
-LIBS += -lopengl32
+LIBS += -lGL
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

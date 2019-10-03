@@ -18,7 +18,7 @@ struct Camera
     glm::dvec3 d;
     glm::dvec3 u;
     glm::dvec3 r;
-    static constexpr double v = 0.000005;
+    static constexpr double v = 0.0005;
 };
 
 class Simulation : public QThread
@@ -55,7 +55,7 @@ private:
     Crystal crystal;
 
     GLWidget *widget = nullptr;
-    const glm::dvec3 up = glm::dvec3(0., -1., 0.);
+    const glm::dvec3 up = glm::dvec3(0., 1., 0.);
     glm::dmat4 view;
     Camera camera;
 
