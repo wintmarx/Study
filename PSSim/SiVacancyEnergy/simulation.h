@@ -11,6 +11,7 @@
 #include "glm/gtc/quaternion.hpp"
 #include "crystal.h"
 #include <mutex>
+#include <vector>
 
 struct Camera
 {
@@ -18,7 +19,7 @@ struct Camera
     glm::dvec3 d;
     glm::dvec3 u;
     glm::dvec3 r;
-    static constexpr double v = 0.0005;
+    static constexpr double v = 0.0000005;
 };
 
 class Simulation : public QThread
@@ -39,20 +40,29 @@ public slots:
     void wheelEvent(QWheelEvent *event);
     void onWidgetResized(int w, int h);
     void Draw();
+    void SetSimTimestep(int step);
 
 signals:
     void Finished();
+    void LoadingTick(float percentage);
+    void ActiveTimestepChanged(int timestamp);
 
 private:
     void run() override;
-    inline int KeyToAddr(int key) { return key | ((Qt::Key_Escape & key) >> 2); }
-    inline int AddrToKey(int addr) { return addr | ((0x0100 & addr) << 2); }
+    inline int KeyToAddr(int key) { return (key & ~Qt::Key_Escape) | ((key & Qt::Key_Escape) >> 16); }
+    inline int AddrToKey(int addr) { return (addr & ~0x0100) | ((0x0100 & addr) << 16); }
     void Update();
     void HandleInput();
     double TwoParticleIteractionEnergy(const Crystal &c, const glm::dvec3 &r1, const glm::dvec3 &r2);
     double ThreeParticleIteractionEnergy(const Crystal &c, const glm::dvec3 &r1, const glm::dvec3 &r2, const glm::dvec3 &r3);
+    inline double Der(double y1, double y2, double dx) { return (y2 - y1) * 0.5 / dx; }
+    static constexpr double dt = 2.e-12;
+    static constexpr double simTime = 1000 * dt;
+    static constexpr uint simTimesteps = static_cast<uint>(simTime / dt);
+    bool isLoaded = false;
 
-    Crystal crystal;
+    std::vector<Crystal> crystal;
+    uint curTimestep;
 
     GLWidget *widget = nullptr;
     const glm::dvec3 up = glm::dvec3(0., 1., 0.);

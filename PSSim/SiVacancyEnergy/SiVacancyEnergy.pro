@@ -41,7 +41,7 @@ HEADERS += \
 FORMS += \
         mainwindow.ui
 
-LIBS += -lGL
+LIBS += -lopengl32
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

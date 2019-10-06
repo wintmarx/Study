@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QOpenGLWidget>
 #include <QWheelEvent>
+#include <QTimer>
 #include <QKeyEvent>
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
@@ -43,6 +44,9 @@ protected:
     void mouseMoveEvent(QMouseEvent *event) override;
     void mousePressEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
+
+private:
+    QTimer *timer;
 };
 
 #endif // GLWIDGET_H

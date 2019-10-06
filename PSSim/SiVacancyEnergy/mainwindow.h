@@ -18,8 +18,9 @@ public:
     ~MainWindow();
     Simulation *simulation;
 
-private slots:
-    void on_close_clicked();
+public slots:
+    void UpdateLoadingBar(float percentage);
+    void UpdateSlider(int value);
 
 private:
     Ui::MainWindow *ui;

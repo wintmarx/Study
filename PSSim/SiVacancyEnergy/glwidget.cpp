@@ -8,12 +8,16 @@ GLWidget::GLWidget(QWidget *parent) :
     viewport(0),
     proj(1.)
 {
-
+    timer = new QTimer(this);
+    timer->setInterval(16);
+    connect(timer, SIGNAL(timeout()), this, SLOT(update()));
+    timer->start();
 }
 
 GLWidget::~GLWidget()
 {
-
+    timer->stop();
+    delete timer;
 }
 
 void GLWidget::initializeGL()

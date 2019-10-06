@@ -5,7 +5,7 @@
 Atom::Atom(const glm::dvec3 &p) :
     p(p),
     v(0.),
-    u(0.)
+    f(0.)
 {
     neighboors.reserve(Crystal::maxNeighboors);
 }
@@ -29,7 +29,7 @@ Crystal::Crystal(const glm::dvec3 &p, const glm::uvec3 &s) :
             }
         }
     }
-
+    uint i = 0;
     for (uint i = 0; i < atoms.size(); i++)
     {
         int bCount = 0;
@@ -59,7 +59,7 @@ void Crystal::AddLattice(uint i, uint j, uint k)
 {
     glm::dvec3 p = this->p + glm::dvec3(i * latticeConst, j * latticeConst, k * latticeConst);
     uint o = atoms.size();
-    atoms.emplace_back(p);                                                               //0
+    atoms.emplace_back(p);                                                                           //0
     atoms.emplace_back(p + glm::dvec3(.50 * latticeConst, .00 * latticeConst, .50 * latticeConst));  //1
     atoms.emplace_back(p + glm::dvec3(.25 * latticeConst, .25 * latticeConst, .25 * latticeConst));  //2
     atoms.emplace_back(p + glm::dvec3(.75 * latticeConst, .25 * latticeConst, .75 * latticeConst));  //3
