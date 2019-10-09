@@ -161,8 +161,9 @@ void DrawSignal(const vector<Complex> &signal, SignalDrawMode mode, uint size, Q
         img[i] = static_cast<uchar>(clamp(scale * src, 0.f, 255.f));
     }
     QPixmap pixmap;
-    pixmap.convertFromImage(QImage((const uchar*)img.data(), size, size, QImage::Format_Grayscale8));
+    pixmap.convertFromImage(QImage((const uchar*)img.data(), size, size, size * (int)sizeof(uchar), QImage::Format_Grayscale8));
     scene->clear();
+    scene->setSceneRect(0., 0., size, size);
     scene->addPixmap(pixmap);
 }
 

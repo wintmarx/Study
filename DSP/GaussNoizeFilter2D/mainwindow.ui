@@ -117,7 +117,7 @@
      <number>5</number>
     </property>
     <attribute name="horizontalHeaderVisible">
-     <bool>false</bool>
+     <bool>true</bool>
     </attribute>
     <attribute name="horizontalHeaderCascadingSectionResizes">
      <bool>true</bool>
@@ -137,10 +137,10 @@
     <attribute name="verticalHeaderCascadingSectionResizes">
      <bool>false</bool>
     </attribute>
-    <attribute name="verticalHeaderDefaultSectionSize">
+    <attribute name="verticalHeaderMinimumSectionSize">
      <number>22</number>
     </attribute>
-    <attribute name="verticalHeaderMinimumSectionSize">
+    <attribute name="verticalHeaderDefaultSectionSize">
      <number>22</number>
     </attribute>
     <row/>
