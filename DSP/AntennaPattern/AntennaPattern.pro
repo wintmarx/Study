@@ -22,12 +22,29 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
+INCLUDEPATH += $$PWD/include
+
+DEFINES += CHARTDIR_HIDE_OBSOLETE _CRT_SECURE_NO_WARNINGS
+
+win32 {
+    contains(QMAKE_HOST.arch, x86_64) {
+        LIBS += $$PWD/lib64/chartdir60.lib
+        QMAKE_POST_LINK += copy /Y $$system_path($$PWD/lib64/chartdir60.dll) $(DESTDIR)
+    } else {
+        LIBS += $$PWD/lib32/chartdir60.lib
+        QMAKE_POST_LINK += copy /Y $$system_path($$PWD/lib32/chartdir60.dll) $(DESTDIR)
+    }
+}
+
+CONFIG += c++11
 
 SOURCES += main.cpp\
         antennacell.cpp \
-        mainwindow.cpp
+        mainwindow.cpp \
+        qchartviewer.cpp
 
 HEADERS  += mainwindow.h \
-    antennacell.h
+        antennacell.h \
+        qchartviewer.h
 
-FORMS    += mainwindow.ui
+FORMS += mainwindow.ui
