@@ -19,7 +19,7 @@ struct Camera
     glm::dvec3 d;
     glm::dvec3 u;
     glm::dvec3 r;
-    static constexpr double v = 0.0000005;
+    static constexpr double v = 0.00000001;
 };
 
 class Simulation : public QThread
@@ -46,6 +46,8 @@ signals:
     void Finished();
     void LoadingTick(float percentage);
     void ActiveTimestepChanged(int timestamp);
+    void DrawPlot(const QVector<double> *keys, const QVector<double> *values, const QColor *color);
+    void RemovePlots();
 
 private:
     void run() override;
@@ -56,7 +58,7 @@ private:
     double TwoParticleIteractionEnergy(const Crystal &c, const glm::dvec3 &r1, const glm::dvec3 &r2);
     double ThreeParticleIteractionEnergy(const Crystal &c, const glm::dvec3 &r1, const glm::dvec3 &r2, const glm::dvec3 &r3);
     inline double Der(double y1, double y2, double dx) { return (y2 - y1) * 0.5 / dx; }
-    static constexpr double dt = 2.e-12;
+    static constexpr double dt = 2.e-30;
     static constexpr double simTime = 1000 * dt;
     static constexpr uint simTimesteps = static_cast<uint>(simTime / dt);
     bool isLoaded = false;
@@ -71,8 +73,12 @@ private:
 
     glm::dvec2 angleCoeff;
 
+    int selAtom = -1;
+    bool selAtomPlotted = false;
+
     static const int keysStates = 352;
     bool keysState[keysStates];
+    bool keysBlock[keysStates];
     static const int mouseStates = 3;
     bool mouseState[mouseStates];
     QPoint mouse;

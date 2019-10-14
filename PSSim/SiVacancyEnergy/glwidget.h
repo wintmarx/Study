@@ -6,11 +6,13 @@
 #include <QWheelEvent>
 #include <QTimer>
 #include <QKeyEvent>
+#include <QOpenGLFunctions_4_5_Core>
+
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/quaternion.hpp"
 
-class GLWidget : public QOpenGLWidget
+class GLWidget : public QOpenGLWidget, public QOpenGLFunctions_4_5_Core
 {
     Q_OBJECT
 public:
@@ -20,6 +22,7 @@ public:
     void DrawTriangle(const glm::dvec3 &p, const glm::vec3 &c);
     void DrawCube(const glm::dvec3 &p, const glm::vec3 &c, double s = 1., bool lines = false);
     void DrawLine(const glm::dvec3 &b, const glm::dvec3 &e, const glm::vec3 &c);
+    glm::dvec3 ScreenToWorld(const QPoint &screen, const glm::dmat4 &modelview);
     glm::ivec4 viewport;
     glm::dmat4 proj;
 

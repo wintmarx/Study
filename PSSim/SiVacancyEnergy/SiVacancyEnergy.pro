@@ -6,7 +6,7 @@
 
 QT       += core gui opengl
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport
 
 TARGET = SiVacancyEnergy
 TEMPLATE = app
@@ -30,13 +30,15 @@ SOURCES += \
         mainwindow.cpp \
         glwidget.cpp \
         simulation.cpp \
-    crystal.cpp
+    crystal.cpp \
+	qcustomplot.cpp
 
 HEADERS += \
         mainwindow.h \
         glwidget.h \
         simulation.h \
-    crystal.h
+    crystal.h \
+	qcustomplot.h
 
 FORMS += \
         mainwindow.ui

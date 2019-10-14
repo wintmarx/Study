@@ -29,7 +29,6 @@ Crystal::Crystal(const glm::dvec3 &p, const glm::uvec3 &s) :
             }
         }
     }
-    uint i = 0;
     for (uint i = 0; i < atoms.size(); i++)
     {
         int bCount = 0;

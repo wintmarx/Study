@@ -1,10 +1,7 @@
 #include "glwidget.h"
 
-#include <GL/glu.h>
-#include <GL/gl.h>
-
 GLWidget::GLWidget(QWidget *parent) :
-    QOpenGLWidget (parent),
+    QOpenGLWidget(parent),
     viewport(0),
     proj(1.)
 {
@@ -12,6 +9,14 @@ GLWidget::GLWidget(QWidget *parent) :
     timer->setInterval(16);
     connect(timer, SIGNAL(timeout()), this, SLOT(update()));
     timer->start();
+
+    QSurfaceFormat format;
+    format.setDepthBufferSize(24);
+    //format.setStencilBufferSize(8);
+    format.setMajorVersion(2);
+    format.setMinorVersion(1);
+    format.setProfile(QSurfaceFormat::CoreProfile);
+    setFormat(format);
 }
 
 GLWidget::~GLWidget()
@@ -22,8 +27,10 @@ GLWidget::~GLWidget()
 
 void GLWidget::initializeGL()
 {
+    initializeOpenGLFunctions();
     glClearColor(1, 1, 1, 1);
     glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
     glEnable(GL_CULL_FACE);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -117,30 +124,6 @@ void GLWidget::setViewMatrix(const double *view)
 void GLWidget::paintGL()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    /*glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
-    glDisable(GL_CULL_FACE);
-    glBegin(GL_QUADS);
-        DrawCube(zcp + glm::dvec3(.5, .5, .5));
-        /*DrawCube(zcp + glm::dvec3(1.5, .5, .5));
-        DrawCube(zcp + glm::dvec3(1.5, .5, 1.5));
-        DrawCube(zcp + glm::dvec3(.5, .5, 1.5));
-        DrawCube(zcp + glm::dvec3(.5, 1.5, .5));
-        DrawCube(zcp + glm::dvec3(1.5, 1.5, .5));
-        DrawCube(zcp + glm::dvec3(1.5, 1.5, 1.5));
-        DrawCube(zcp + glm::dvec3(.5, 1.5, 1.5));*/
-    /*glEnd();
-    glEnable(GL_CULL_FACE);
-    glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
-
-    DrawCell(zcp);*/
-    /*DrawCell(zcp + glm::dvec3(1., 0., 0.));
-    DrawCell(zcp + glm::dvec3(1., 0., 1.));
-    DrawCell(zcp + glm::dvec3(0., 0., 1.));
-    DrawCell(zcp + glm::dvec3(0., 1., 0.));
-    DrawCell(zcp + glm::dvec3(1., 1., 0.));
-    DrawCell(zcp + glm::dvec3(1., 1., 1.));
-    DrawCell(zcp + glm::dvec3(0., 1., 1.));*/
     emit Draw();
 }
 
@@ -148,6 +131,7 @@ void GLWidget::resizeGL(int w, int h)
 {
     viewport.z = w;
     viewport.w = h;
+    glViewport(viewport.x, viewport.y, viewport.z, viewport.w);
     glMatrixMode(GL_PROJECTION);
     proj = glm::perspectiveRH_NO(45., double(w)/ h, 0.1, 100.);
     //proj = glm::frustumRH_NO(-1., 1., -1., 1., 1., 100.);
@@ -183,4 +167,12 @@ void GLWidget::mousePressEvent(QMouseEvent *event)
 void GLWidget::mouseReleaseEvent(QMouseEvent *event)
 {
     emit mouseReleaseEventSignal(event);
+}
+
+glm::dvec3 GLWidget::ScreenToWorld(const QPoint &screen, const glm::dmat4 &modelview)
+{
+    float depth = 1.f;
+    glReadPixels(screen.x(), viewport[3] - screen.y(), 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
+    qDebug("%d, %d, depth: %f, %d", screen.x(),  viewport[3] - screen.y(), depth, glGetError());
+    return glm::unProjectNO(glm::dvec3(screen.x(), screen.y(), depth), modelview, proj, viewport);
 }

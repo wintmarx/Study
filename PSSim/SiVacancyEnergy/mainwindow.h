@@ -2,8 +2,10 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include "simulation.h"
 #include <QThread>
+
+#include "simulation.h"
+#include "qcustomplot.h"
 
 namespace Ui {
 class MainWindow;
@@ -21,6 +23,8 @@ public:
 public slots:
     void UpdateLoadingBar(float percentage);
     void UpdateSlider(int value);
+    void DrawPlot(const QVector<double> *keys, const QVector<double> *values, const QColor *color);
+    void RemovePlots();
 
 private:
     Ui::MainWindow *ui;

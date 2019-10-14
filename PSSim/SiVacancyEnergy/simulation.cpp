@@ -13,6 +13,7 @@ Simulation::Simulation(GLWidget *widget) :
     for (int i = 0; i < keysStates; i++)
     {
         keysState[i] = false;
+        keysBlock[i] = false;
     }
 
     for (int i = 0; i < mouseStates; i++)
@@ -57,7 +58,7 @@ void Simulation::run()
 void Simulation::MainLoop()
 {
     crystal.reserve(simTimesteps);
-    crystal.emplace_back(glm::dvec3(0., 0., 10.), glm::uvec3(10, 10, 10));
+    crystal.emplace_back(glm::dvec3(0., 0., 10.), glm::uvec3(3, 3, 3));
     float loading = 0.3f;//30%
     emit LoadingTick(loading);
     for (uint i = 1; i < simTimesteps; i++)
@@ -123,9 +124,7 @@ void Simulation::MainLoop()
             a.f.z = Der(uz[1], uz[0], d + d);
             a.p = a.p + a.v * dt + lastF * 0.5 / a.m * dt * dt;
             a.v = a.v + (a.f + lastF) * 0.5 / a.m * dt;
-            //qDebug("a.f.x :%f", a.f.x);
         }
-        //qDebug("--------------------------");
         loading += (1.f - loading) / (simTimesteps - i);
         emit LoadingTick(loading);
     }
@@ -138,11 +137,52 @@ void Simulation::MainLoop()
     emit Finished();
 }
 
+static QVector<double> ks;
+static QVector<double> fx;
+static QVector<double> fy;
+static QVector<double> fz;
+static QVector<double> vx;
+static QVector<double> vy;
+static QVector<double> vz;
+const QColor fxc(Qt::black);
+const QColor fyc(Qt::blue);
+const QColor fzc(Qt::cyan);
+const QColor vxc(Qt::red);
+const QColor vyc(Qt::green);
+const QColor vzc(Qt::yellow);
+
 void Simulation::Update()
 {
     cameraMutex.lock();
     view = glm::lookAtRH(camera.p, camera.p + camera.d, up);
     cameraMutex.unlock();
+
+    if (selAtom >= 0 && !selAtomPlotted) {
+        selAtomPlotted = true;
+        ks.resize(simTimesteps);
+        fx.resize(simTimesteps);
+        fy.resize(simTimesteps);
+        fz.resize(simTimesteps);
+        vx.resize(simTimesteps);
+        vy.resize(simTimesteps);
+        vz.resize(simTimesteps);
+        for (uint i = 0 ; i < simTimesteps; i++) {
+            ks[i] = i;
+            fx[i] = crystal[i].atoms[selAtom].f.x;
+            fy[i] = crystal[i].atoms[selAtom].f.y;
+            fz[i] = crystal[i].atoms[selAtom].f.z;
+            vx[i] = crystal[i].atoms[selAtom].v.x;
+            vy[i] = crystal[i].atoms[selAtom].v.y;
+            vz[i] = crystal[i].atoms[selAtom].v.z;
+        }
+
+        emit DrawPlot(&ks, &fx, &fxc);
+        emit DrawPlot(&ks, &fy, &fyc);
+        emit DrawPlot(&ks, &fz, &fzc);
+        emit DrawPlot(&ks, &vx, &vxc);
+        emit DrawPlot(&ks, &vy, &vyc);
+        emit DrawPlot(&ks, &vz, &vzc);
+    }
 }
 
 double Simulation::TwoParticleIteractionEnergy(const Crystal &c, const glm::dvec3 &r1, const glm::dvec3 &r2)
@@ -213,6 +253,7 @@ void Simulation::Draw()
     widget->setViewMatrix(&view[0][0]);
     cameraMutex.unlock();
     aMutex.lock();
+    int i = 0;
     for(const Atom& a : atoms)
     {
         //double range = crystal.maxEnergy - crystal.minEnergy;
@@ -220,8 +261,10 @@ void Simulation::Draw()
         /*c.r = a.u >= 0. ? rate : 0;
         c.g = 0.;
         c.b = a.u < 0. ? rate : 0;*/
+        c.b = i == selAtom? 1.f : 0.f;
         c.r = a.isBoundary ? 1.f : 0.f;
         widget->DrawCube(a.p, c, Crystal::atomSize);
+        i++;
     }
     for(const auto& b : crystal.bonds)
     {
@@ -261,11 +304,31 @@ void Simulation::keyPressEvent(QKeyEvent *event)
             emit(ActiveTimestepChanged(static_cast<int>(curTimestep + 1)));
         }
     }
+
+    if (keysState[KeyToAddr(Qt::Key_Shift)] && !keysBlock[KeyToAddr(Qt::Key_Shift)])
+    {
+        keysBlock[KeyToAddr(Qt::Key_Shift)] = true;
+        selAtom = -1;
+        glm::dvec3 m = widget->ScreenToWorld(mouse, view);
+        qDebug("s: %d, %d, m: %f, %f, %f, pos: %f, %f, %f", mouse.x(), mouse.y(), m.x, m.y, m.z, camera.p.x, camera.p.y, camera.p.z);
+        for(uint i = 0; i < crystal[curTimestep].atoms.size(); i++)
+        {
+            if (glm::length(crystal[curTimestep].atoms[i].p - m) < Crystal::atomSize) {
+               selAtom = static_cast<int>(i);
+               selAtomPlotted = false;
+               break;
+            }
+        }
+    }
 }
 
 void Simulation::keyReleaseEvent(QKeyEvent *event)
 {
     keysState[KeyToAddr(event->key())] = false;
+    if (!keysState[KeyToAddr(Qt::Key_Shift)])
+    {
+        keysBlock[KeyToAddr(Qt::Key_Shift)] = false;
+    }
 }
 
 void Simulation::mouseMoveEvent(QMouseEvent *event)
