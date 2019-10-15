@@ -137,10 +137,10 @@
     <attribute name="verticalHeaderCascadingSectionResizes">
      <bool>false</bool>
     </attribute>
-    <attribute name="verticalHeaderDefaultSectionSize">
+    <attribute name="verticalHeaderMinimumSectionSize">
      <number>22</number>
     </attribute>
-    <attribute name="verticalHeaderMinimumSectionSize">
+    <attribute name="verticalHeaderDefaultSectionSize">
      <number>22</number>
     </attribute>
     <row/>
@@ -295,7 +295,7 @@
      <enum>QTabWidget::North</enum>
     </property>
     <property name="currentIndex">
-     <number>1</number>
+     <number>0</number>
     </property>
     <property name="elideMode">
      <enum>Qt::ElideNone</enum>
@@ -460,6 +460,83 @@
     </property>
     <property name="text">
      <string>Noise</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="ntosEdit">
+    <property name="geometry">
+     <rect>
+      <x>640</x>
+      <y>340</y>
+      <width>121</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="acceptDrops">
+     <bool>false</bool>
+    </property>
+    <property name="text">
+     <string>0</string>
+    </property>
+    <property name="readOnly">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="rtosEdit">
+    <property name="geometry">
+     <rect>
+      <x>640</x>
+      <y>390</y>
+      <width>121</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="acceptDrops">
+     <bool>false</bool>
+    </property>
+    <property name="text">
+     <string>0</string>
+    </property>
+    <property name="readOnly">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_13">
+    <property name="geometry">
+     <rect>
+      <x>640</x>
+      <y>320</y>
+      <width>71</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>noise/signal</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_14">
+    <property name="geometry">
+     <rect>
+      <x>640</x>
+      <y>370</y>
+      <width>81</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>restored/signal</string>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="logCheckBox">
+    <property name="geometry">
+     <rect>
+      <x>640</x>
+      <y>160</y>
+      <width>72</width>
+      <height>19</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>log</string>
     </property>
    </widget>
   </widget>

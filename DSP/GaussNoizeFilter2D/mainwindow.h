@@ -28,6 +28,8 @@ private slots:
 
     void on_noiseButton_clicked();
 
+    void on_logCheckBox_stateChanged(int arg1);
+
 private:
     Ui::MainWindow *ui;
 };
