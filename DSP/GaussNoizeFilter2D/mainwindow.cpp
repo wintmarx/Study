@@ -5,42 +5,28 @@
 #include <vector>
 #include <algorithm>
 #include <QFileDialog>
+#include <QGraphicsRectItem>
+#include <QGraphicsPixmapItem>
 
 using namespace std;
 
-//typedef complex<double> cd;
-//typedef vector<cd> vcd;
-
 const int imgDefaultSize = 500;
 
-QGraphicsScene *cleanScene;
-QGraphicsScene *noiseScene;
-QGraphicsScene *fftScene;
-QGraphicsScene *restoredScene;
+static QGraphicsScene *cleanScene;
+static QGraphicsScene *noiseScene;
+static QGraphicsScene *fftScene;
+static QGraphicsScene *restoredScene;
+static QGraphicsRectItem *clipRect = nullptr;
+static QGraphicsPixmapItem *clearPixmap = nullptr;
+static QGraphicsPixmapItem *noisyPixmap = nullptr;
+static QGraphicsPixmapItem *fftPixmap = nullptr;
+static QGraphicsPixmapItem *restoredPixmap = nullptr;
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-
-    /*ui->cleanPlot->xAxis->setRange(0, signalLength);
-    ui->cleanPlot->yAxis->setRange(-16, 16);
-    ui->cleanPlot->setInteraction(QCP::iRangeDrag, true);
-    ui->cleanPlot->setInteraction(QCP::iRangeZoom, true);
-    ui->cleanPlot->axisRect()->setRangeZoom(Qt::Horizontal);
-
-    ui->noisyPlot->xAxis->setRange(0, signalLength);
-    ui->noisyPlot->yAxis->setRange(-16, 16);
-    ui->noisyPlot->setInteraction(QCP::iRangeDrag, true);
-    ui->noisyPlot->setInteraction(QCP::iRangeZoom, true);
-    ui->noisyPlot->axisRect()->setRangeZoom(Qt::Horizontal);
-
-    ui->fourierPlot->xAxis->setRange(0, 1);
-    ui->fourierPlot->yAxis->setRange(0, 1024);
-    ui->fourierPlot->setInteraction(QCP::iRangeDrag, true);
-    ui->fourierPlot->setInteraction(QCP::iRangeZoom, true);
-    ui->fourierPlot->axisRect()->setRangeZoom(Qt::Horizontal);*/
 
     ui->signalsTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     ui->signalsTable->verticalHeader()->setSectionResizeMode(QHeaderView::Stretch);
@@ -49,13 +35,24 @@ MainWindow::MainWindow(QWidget *parent) :
     noiseScene = new QGraphicsScene();
     fftScene = new QGraphicsScene();
     restoredScene = new QGraphicsScene();
+    clearPixmap = new QGraphicsPixmapItem();
     ui->cleanView->setScene(cleanScene);
+    cleanScene->addItem(clearPixmap);
     ui->cleanView->show();
     ui->noiseView->setScene(noiseScene);
+    noisyPixmap = new QGraphicsPixmapItem();
+    noiseScene->addItem(noisyPixmap);
     ui->noiseView->show();
     ui->fftView->setScene(fftScene);
+    fftPixmap = new QGraphicsPixmapItem();
+    clipRect = new QGraphicsRectItem();
+    clipRect->setPen(QPen(Qt::red));
+    fftScene->addItem(fftPixmap);
+    fftScene->addItem(clipRect);
     ui->fftView->show();
     ui->restoredView->setScene(restoredScene);
+    restoredPixmap = new QGraphicsPixmapItem();
+    restoredScene->addItem(restoredPixmap);
     ui->restoredView->show();
     srand(static_cast<uint>(time(nullptr)));
 }
@@ -76,48 +73,6 @@ T clamp(T val, T lo, T hi)
     return std::min(std::max(val, lo), hi);
 }
 
-/*vcd fft(const vcd &as) {
-  int n = as.size();
-  int k = 0; // Длина n в битах
-  while ((1 << k) < n) k++;
-  vector<int> rev(n);
-  rev[0] = 0;
-  int high1 = -1;
-  for (int i = 1; i < n; i++) {
-    if ((i & (i - 1)) == 0) // Проверка на степень двойки. Если i ей является, то i-1 будет состоять из кучи единиц.
-      high1++;
-    rev[i] = rev[i ^ (1 << high1)]; // Переворачиваем остаток
-    rev[i] |= (1 << (k - high1 - 1)); // Добавляем старший бит
-  }
-
-  vcd roots(n);
-  for (int i = 0; i < n; i++) {
-    double alpha = 2 * M_PI * i / n;
-    roots[i] = cd(cos(alpha), sin(alpha));
-  }
-
-  vcd cur(n);
-  for (int i = 0; i < n; i++)
-    cur[i] = as[rev[i]];
-
-  for (int len = 1; len < n; len <<= 1) {
-    vcd ncur(n);
-    int rstep = roots.size() / (len * 2);
-    for (int pdest = 0; pdest < n;) {
-      int p1 = pdest;
-      for (int i = 0; i < len; i++) {
-        cd val = roots[i * rstep] * cur[p1 + len];
-        ncur[pdest] = cur[p1] + val;
-        ncur[pdest + len] = cur[p1] - val;
-        pdest++, p1++;
-      }
-      pdest += len;
-    }
-    cur.swap(ncur);
-  }
-  return cur;
-}*/
-
 typedef struct
 {
     float re;
@@ -132,7 +87,6 @@ typedef struct
     }
 } Complex;
 
-
 enum class SignalDrawMode
 {
     Amp,
@@ -140,31 +94,56 @@ enum class SignalDrawMode
     Image
 };
 
-void DrawSignal(const vector<Complex> &signal, SignalDrawMode mode, uint size, QGraphicsScene *scene, float scale = 1.)
+QPixmap DrawSignal(const vector<Complex> &signal, SignalDrawMode mode, uint size, bool lg = false, float scale = 1.)
 {
     vector<uchar> img(signal.size());
+    float max = 1.;
+    switch(mode)
+    {
+        case SignalDrawMode::Amp:
+            if (!lg)
+            {
+                break;
+            }
+            max = std::max_element(signal.begin(), signal.end(), [](const Complex& a, const Complex&b) {
+                return a.Magnitude() < b.Magnitude();
+            })->Magnitude() * scale * 0.001f;
+        break;
+        case SignalDrawMode::Real:
+            max = std::max_element(signal.begin(), signal.end(), [](const Complex& a, const Complex&b) {
+                return a.re < b.re;
+            })->re;
+        break;
+        case SignalDrawMode::Image:
+            max = std::max_element(signal.begin(), signal.end(), [](const Complex& a, const Complex&b) {
+                return a.im < b.im;
+            })->im;
+        break;
+    }
     for(uint i = 0; i < img.size(); i++)
     {
         float src = 0.f;
         switch(mode)
         {
             case SignalDrawMode::Amp:
-                src = std::roundf(signal[i].Magnitude());
+                src = signal[i].Magnitude();
             break;
             case SignalDrawMode::Real:
-                src = std::roundf(signal[i].re);
+                src = signal[i].re;
             break;
             case SignalDrawMode::Image:
-                src = std::roundf(signal[i].im);
+                src = signal[i].im;
             break;
         }
-        img[i] = static_cast<uchar>(clamp(scale * src, 0.f, 255.f));
+        src = scale * src / max;
+        if(lg) {
+            src = std::log10(src);
+        }
+        img[i] = static_cast<uchar>(clamp(std::roundf(255.f * src), 0.f, 255.f));
     }
     QPixmap pixmap;
     pixmap.convertFromImage(QImage((const uchar*)img.data(), size, size, size * (int)sizeof(uchar), QImage::Format_Grayscale8));
-    scene->clear();
-    scene->setSceneRect(0., 0., size, size);
-    scene->addPixmap(pixmap);
+    return pixmap;
 }
 
 void fft(Complex *signal, int n, int is)
@@ -299,22 +278,11 @@ void SwapQuarters(vector<Complex> &signal, uint size)
     }
 }
 
-void ClearSpectrum(vector<Complex> &spectrum, uint size, float clipEnergy)
+uint ClearSpectrum(vector<Complex> &spectrum, uint size, float clipEnergy)
 {
-    /*noisySignal[0].re = 0;
-    noisySignal[0].im = 0;
-
-    noisySignal[size - 1].re = 0;
-    noisySignal[size - 1].im = 0;
-
-    noisySignal[noisySignal.size() - 1].re = 0;
-    noisySignal[noisySignal.size() - 1].im = 0;
-
-    noisySignal[noisySignal.size() - 1 - size].re = 0;
-    noisySignal[noisySignal.size() - 1 - size].im = 0;*/
-
     float tmpEnergy = 0.f;
     bool clip = false;
+    uint clipi = 0;
     for(uint i = 0; i < size/2; i++)
     {
         for(uint j = 0; j <= i; j++)
@@ -370,9 +338,14 @@ void ClearSpectrum(vector<Complex> &spectrum, uint size, float clipEnergy)
         }
         if (tmpEnergy >= clipEnergy)
         {
+           if(!clip)
+           {
+               clipi = i;
+           }
            clip = true;
         }
     }
+    return clipi;
 }
 
 float lerp(float s, float e, float t)
@@ -384,7 +357,8 @@ float blerp(float c00, float c10, float c01, float c11, float tx, float ty)
     return lerp(lerp(c00, c10, tx), lerp(c01, c11, tx), ty);
 }
 
-vector<Complex> scale(vector<Complex> &src, uint size, uint newSize){
+vector<Complex> scale(vector<Complex> &src, uint size, uint newSize)
+{
     uint x, y;
     float coeff = float(size - 1) / newSize;
     vector<Complex> dst(newSize * newSize);
@@ -408,28 +382,42 @@ vector<Complex> scale(vector<Complex> &src, uint size, uint newSize){
     return dst;
 }
 
+float Error(const vector<Complex>& n, const vector<Complex>& s)
+{
+    float enn = 0.;
+    float ens = 0.;
+    for (uint i = 0; i < n.size(); i++)
+    {
+        enn += (n[i].re - s[i].re) * (n[i].re - s[i].re) + (n[i].im - s[i].im) * (n[i].im - s[i].im);
+        ens += s[i].MagnitudeSqr();
+    }
+    return enn/ens;
+}
+
 static vector<Complex> cleanSignal;
 static vector<Complex> noisySignal;
+static vector<Complex> fftSignal;
 static uint dimSize;
 static uint dimSizeScaled;
 
 void ProcessSignal(vector<Complex> &signal, uint size, float noiseRate)
 {
     noisySignal = GenerateNoise(signal, noiseRate);
-    DrawSignal(noisySignal, SignalDrawMode::Real, size, noiseScene);
+
+    noisyPixmap->setPixmap(DrawSignal(noisySignal, SignalDrawMode::Real, size));
+    noiseScene->update();
 
     uint nearestPow = 1;
     while(nearestPow < size) nearestPow <<= 1;
     dimSizeScaled = (nearestPow - size) < (size - (nearestPow >> 1)) ? nearestPow : (nearestPow >> 1);
     if (dimSizeScaled != size)
     {
-        noisySignal = scale(noisySignal, size, dimSizeScaled);
+        fftSignal = scale(noisySignal, size, dimSizeScaled);
+    } else {
+        fftSignal = noisySignal;
     }
 
-    fft2D(noisySignal, dimSizeScaled, -1);
-    SwapQuarters(noisySignal, dimSizeScaled);
-    DrawSignal(noisySignal, SignalDrawMode::Amp, dimSizeScaled, fftScene, 0.01f);
-    SwapQuarters(noisySignal, dimSizeScaled);
+    fft2D(fftSignal, dimSizeScaled, -1);
 }
 
 void MainWindow::on_openButton_clicked()
@@ -454,7 +442,10 @@ void MainWindow::on_openButton_clicked()
         cleanSignal[i].re = data[i];
     }
     dimSize = size;
-    DrawSignal(cleanSignal, SignalDrawMode::Real, size, cleanScene);
+
+    clearPixmap->setPixmap(DrawSignal(cleanSignal, SignalDrawMode::Real, size));
+    cleanScene->update();
+
     ui->tabWidget->setCurrentIndex(0);
 }
 
@@ -480,7 +471,10 @@ void MainWindow::on_genButton_clicked()
     }
 
     dimSize = size;
-    DrawSignal(cleanSignal, SignalDrawMode::Real, size, cleanScene);
+
+    clearPixmap->setPixmap(DrawSignal(cleanSignal, SignalDrawMode::Real, size));
+    cleanScene->update();
+
     ui->tabWidget->setCurrentIndex(0);
 }
 
@@ -493,17 +487,25 @@ void MainWindow::on_noiseButton_clicked()
 
     float noiseRate = ui->noiseRateEdit->text().toFloat();
     ProcessSignal(cleanSignal, dimSize, noiseRate);
+
+    SwapQuarters(fftSignal, dimSizeScaled);
+    fftPixmap->setPixmap(DrawSignal(fftSignal, SignalDrawMode::Amp, dimSizeScaled, ui->logCheckBox->checkState() == Qt::Checked, 0.01f / 255.f));
+    SwapQuarters(fftSignal, dimSizeScaled);
+    fftScene->update();
+
+    ui->ntosEdit->setText(QString::number(Error(noisySignal, cleanSignal)));
     ui->tabWidget->setCurrentIndex(1);
+    ui->logCheckBox->setCheckState(Qt::Unchecked);
 }
 
 void MainWindow::on_clearButton_clicked()
 {
-    if (noisySignal.empty())
+    if (fftSignal.empty())
     {
         return;
     }
 
-    vector<Complex> copySignal(noisySignal);
+    vector<Complex> copySignal(fftSignal);
 
     float clipRate = ui->clipRateEdit->text().toFloat();
     float clipEnergy = 0.f;
@@ -513,13 +515,20 @@ void MainWindow::on_clearButton_clicked()
     }
     clipEnergy *= clipRate * 0.01f;
 
-    ClearSpectrum(copySignal, dimSizeScaled, clipEnergy);
+    uint clip = 2 * ClearSpectrum(copySignal, dimSizeScaled, clipEnergy);
+    clipRect->setRect(dimSizeScaled/2 - clip/2 - 1, dimSizeScaled/2 - clip/2 - 1, clip + 1, clip + 1);
+    fftScene->update();
 
     fft2D(copySignal, dimSizeScaled, 1);
     if (dimSizeScaled != dimSize) {
        copySignal = scale(copySignal, dimSizeScaled, dimSize);
     }
-    DrawSignal(copySignal, SignalDrawMode::Real, dimSize, restoredScene);
+
+    restoredPixmap->setPixmap(DrawSignal(copySignal, SignalDrawMode::Real, dimSize));
+    restoredScene->update();
+
+    ui->rtosEdit->setText(QString::number(Error(copySignal, cleanSignal)));
+
     ui->tabWidget->setCurrentIndex(3);
 }
 
@@ -533,4 +542,23 @@ void MainWindow::on_delRowButton_clicked()
 {
     if(ui->signalsTable->rowCount() > 1)
         ui->signalsTable->setRowCount(ui->signalsTable->rowCount()-1);
+}
+
+void MainWindow::on_logCheckBox_stateChanged(int arg1)
+{
+    switch(ui->tabWidget->currentIndex())
+    {
+    case 0:
+        break;
+    case 1:
+        break;
+    case 2:
+        SwapQuarters(fftSignal, dimSizeScaled);
+        fftPixmap->setPixmap(DrawSignal(fftSignal, SignalDrawMode::Amp, dimSizeScaled, arg1 == Qt::Checked, 0.01f / 255.f));
+        SwapQuarters(fftSignal, dimSizeScaled);
+        fftScene->update();
+        break;
+    case 3:
+        break;
+    }
 }
