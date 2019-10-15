@@ -12,10 +12,12 @@ GLWidget::GLWidget(QWidget *parent) :
 
     QSurfaceFormat format;
     format.setDepthBufferSize(24);
-    //format.setStencilBufferSize(8);
+    format.setStencilBufferSize(8);
     format.setMajorVersion(2);
     format.setMinorVersion(1);
     format.setProfile(QSurfaceFormat::CoreProfile);
+    //format.setSamples(0);
+    //QSurfaceFormat::setDefaultFormat(format);
     setFormat(format);
 }
 
@@ -30,7 +32,6 @@ void GLWidget::initializeGL()
     initializeOpenGLFunctions();
     glClearColor(1, 1, 1, 1);
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);
     glEnable(GL_CULL_FACE);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -171,8 +172,9 @@ void GLWidget::mouseReleaseEvent(QMouseEvent *event)
 
 glm::dvec3 GLWidget::ScreenToWorld(const QPoint &screen, const glm::dmat4 &modelview)
 {
+    makeCurrent();
     float depth = 1.f;
     glReadPixels(screen.x(), viewport[3] - screen.y(), 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
-    qDebug("%d, %d, depth: %f, %d", screen.x(),  viewport[3] - screen.y(), depth, glGetError());
+    qDebug("%d, %d, depth: %f", screen.x(),  viewport[3] - screen.y(), depth);
     return glm::unProjectNO(glm::dvec3(screen.x(), screen.y(), depth), modelview, proj, viewport);
 }

@@ -176,6 +176,7 @@ void Simulation::Update()
             vz[i] = crystal[i].atoms[selAtom].v.z;
         }
 
+        emit RemovePlots();
         emit DrawPlot(&ks, &fx, &fxc);
         emit DrawPlot(&ks, &fy, &fyc);
         emit DrawPlot(&ks, &fz, &fzc);
@@ -313,7 +314,7 @@ void Simulation::keyPressEvent(QKeyEvent *event)
         qDebug("s: %d, %d, m: %f, %f, %f, pos: %f, %f, %f", mouse.x(), mouse.y(), m.x, m.y, m.z, camera.p.x, camera.p.y, camera.p.z);
         for(uint i = 0; i < crystal[curTimestep].atoms.size(); i++)
         {
-            if (glm::length(crystal[curTimestep].atoms[i].p - m) < Crystal::atomSize) {
+            if (glm::length(crystal[curTimestep].atoms[i].p - m) < 2 * Crystal::atomSize) {
                selAtom = static_cast<int>(i);
                selAtomPlotted = false;
                break;
