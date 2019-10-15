@@ -56,7 +56,6 @@ MainWindow::~MainWindow()
 
 void MainWindow::onMouseMoveChart(QMouseEvent *event)
 {
-    qDebug("onMouseMoveChart");
     int mouseX = ui->chartViewer->getChartMouseX();
     int mouseY = ui->chartViewer->getChartMouseY();
 
@@ -83,7 +82,6 @@ void MainWindow::onMouseMoveChart(QMouseEvent *event)
 
 void MainWindow::onMouseUpChart(QMouseEvent *event)
 {
-    qDebug("onMouseUpChart");
     if (m_isDragging && (event->button() == Qt::LeftButton))
     {
         // mouse up means not dragging
