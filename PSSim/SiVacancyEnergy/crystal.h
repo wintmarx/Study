@@ -5,6 +5,7 @@
 #include <vector>
 
 typedef unsigned int uint;
+typedef std::pair<uint, uint> Bond;
 
 class Atom
 {
@@ -44,7 +45,7 @@ class Crystal
 
     glm::dvec3 p;
     std::vector<Atom> atoms;
-    std::vector<std::pair<uint, uint>> bonds;
+    std::vector<Bond> bonds;
 };
 
 #endif // ATOM_H

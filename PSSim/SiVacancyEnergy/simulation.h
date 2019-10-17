@@ -58,9 +58,10 @@ private:
     double TwoParticleIteractionEnergy(const Crystal &c, const glm::dvec3 &r1, const glm::dvec3 &r2);
     double ThreeParticleIteractionEnergy(const Crystal &c, const glm::dvec3 &r1, const glm::dvec3 &r2, const glm::dvec3 &r3);
     inline double Der(double y1, double y2, double dx) { return (y2 - y1) * 0.5 / dx; }
-    static constexpr double dt = 2.e-30;
-    static constexpr double simTime = 1000 * dt;
-    static constexpr uint simTimesteps = static_cast<uint>(simTime / dt);
+    static constexpr double dt = 2.e-16;
+    static constexpr uint simTimesteps = 5000;
+    static constexpr double simTime = simTimesteps * dt;
+
     bool isLoaded = false;
 
     std::vector<Crystal> crystal;
