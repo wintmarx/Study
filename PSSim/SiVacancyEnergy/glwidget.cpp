@@ -175,5 +175,6 @@ glm::dvec3 GLWidget::ScreenToWorld(const QPoint &screen, const glm::dmat4 &model
     makeCurrent();
     float depth = 1.f;
     glReadPixels(screen.x(), viewport[3] - screen.y(), 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
-    return glm::unProjectNO(glm::dvec3(screen.x(), viewport[3] - screen.y(), depth), modelview, proj, viewport);
+    qDebug("%d, %d, depth: %f", screen.x(),  viewport[3] - screen.y(), depth);
+    return glm::unProjectNO(glm::dvec3(screen.x(), screen.y(), depth), modelview, proj, viewport);
 }

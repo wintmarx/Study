@@ -19,7 +19,7 @@ struct Camera
     glm::dvec3 d;
     glm::dvec3 u;
     glm::dvec3 r;
-    static constexpr double v = 0.0000001;
+    static constexpr double v = 0.00000001;
 };
 
 class Simulation : public QThread
@@ -58,7 +58,7 @@ private:
     double TwoParticleIteractionEnergy(const Crystal &c, const glm::dvec3 &r1, const glm::dvec3 &r2);
     double ThreeParticleIteractionEnergy(const Crystal &c, const glm::dvec3 &r1, const glm::dvec3 &r2, const glm::dvec3 &r3);
     inline double Der(double y1, double y2, double dx) { return (y2 - y1) * 0.5 / dx; }
-    static constexpr double dt = 1.e-30;
+    static constexpr double dt = 2.e-30;
     static constexpr double simTime = 1000 * dt;
     static constexpr uint simTimesteps = static_cast<uint>(simTime / dt);
     bool isLoaded = false;
