@@ -45,7 +45,7 @@ Crystal::Crystal(const glm::dvec3 &p, const glm::uvec3 &s) :
         }
         for (uint j = i + 1; j < atoms.size(); j++)
         {
-            if (glm::length(atoms[i].p - atoms[j].p) < Crystal::potentialCutoffR)
+            if (glm::length(atoms[i].p - atoms[j].p) < 1.3 * Crystal::potentialCutoffR)
             {
                 atoms[i].neighboors.push_back(&atoms[j]);
                 atoms[j].neighboors.push_back(&atoms[i]);

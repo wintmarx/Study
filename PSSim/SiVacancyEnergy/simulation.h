@@ -19,7 +19,7 @@ struct Camera
     glm::dvec3 d;
     glm::dvec3 u;
     glm::dvec3 r;
-    static constexpr double v = 0.00000001;
+    static constexpr double v = 0.0000001;
 };
 
 class Simulation : public QThread

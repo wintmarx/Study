@@ -5,7 +5,7 @@ Simulation::Simulation(GLWidget *widget) :
     angleCoeff(1.),
     mouse(0., 0.)
 {
-    camera.p = glm::dvec3(0., 0., 30.);
+    camera.p = glm::dvec3(0., 0., 11.);
     camera.d = glm::dvec3(0., 0., -1.);
     camera.u = glm::dvec3(0., 1., 0.);
     camera.r = glm::dvec3(1., 0., 0.);
@@ -61,14 +61,30 @@ void Simulation::MainLoop()
     crystal.emplace_back(glm::dvec3(0., 0., 10.), glm::uvec3(3, 3, 3));
     float loading = 0.3f;//30%
     emit LoadingTick(loading);
+    glm::dvec2 ux(0.);
+    glm::dvec2 uy(0.);
+    glm::dvec2 uz(0.);
+    glm::dvec3 lastF;
+    double d = Crystal::equalR * 0.01;
+    double initEnergy = 0.;
+    for(Atom &a : crystal.back().atoms)
+    {
+        const auto& n = a.neighboors;
+        for(uint j = 0; j < n.size(); j++)
+        {
+            //initEnergy += TwoParticleIteractionEnergy(crystal.back(), a.p, n[j]->p);
+            for(uint k = j + 1; k < n.size(); k++)
+            {
+                initEnergy += ThreeParticleIteractionEnergy(crystal.back(), a.p, n[j]->p, n[k]->p);
+            }
+        }
+    }
+
+    qDebug("init energy %f", initEnergy);
+
     for (uint i = 1; i < simTimesteps; i++)
     {
         crystal.emplace_back(crystal.back());
-        glm::dvec2 ux(0.);
-        glm::dvec2 uy(0.);
-        glm::dvec2 uz(0.);
-        glm::dvec3 lastF;
-        double d = crystal.back().equalR * 0.01;
         for(Atom &a : crystal.back().atoms)
         {
             if (a.isBoundary)
@@ -85,37 +101,19 @@ void Simulation::MainLoop()
             uz[1] = 0.;
             const auto& neighboors = a.neighboors;
             for(uint j = 0; j < neighboors.size(); j++) {
-                a.p.x -= d;
-                ux[0] += TwoParticleIteractionEnergy(crystal.back(), a.p, neighboors[j]->p);
-                a.p.x += d + d;
-                ux[1] += TwoParticleIteractionEnergy(crystal.back(), a.p, neighboors[j]->p);
-                a.p.x -= d;
-                a.p.y -= d;
-                uy[0] += TwoParticleIteractionEnergy(crystal.back(), a.p, neighboors[j]->p);
-                a.p.y += d + d;
-                uy[1] += TwoParticleIteractionEnergy(crystal.back(), a.p, neighboors[j]->p);
-                a.p.y -= d;
-                a.p.z -= d;
-                uz[0] += TwoParticleIteractionEnergy(crystal.back(), a.p, neighboors[j]->p);
-                a.p.z += d + d;
-                uz[1] += TwoParticleIteractionEnergy(crystal.back(), a.p, neighboors[j]->p);
-                a.p.z -= d;
+                ux[0] += TwoParticleIteractionEnergy(crystal.back(), a.p - glm::dvec3(-d, 0., 0.), neighboors[j]->p);
+                ux[1] += TwoParticleIteractionEnergy(crystal.back(), a.p - glm::dvec3( d, 0., 0.), neighboors[j]->p);
+                uy[0] += TwoParticleIteractionEnergy(crystal.back(), a.p - glm::dvec3(0., -d, 0.), neighboors[j]->p);
+                uy[1] += TwoParticleIteractionEnergy(crystal.back(), a.p - glm::dvec3(0.,  d, 0.), neighboors[j]->p);
+                uz[0] += TwoParticleIteractionEnergy(crystal.back(), a.p - glm::dvec3(0., 0., -d), neighboors[j]->p);
+                uz[1] += TwoParticleIteractionEnergy(crystal.back(), a.p - glm::dvec3(0., 0.,  d), neighboors[j]->p);
                 for(uint k = j + 1; k < neighboors.size(); k++) {
-                    a.p.x -= d;
-                    ux[0] += ThreeParticleIteractionEnergy(crystal.back(), a.p, neighboors[j]->p, neighboors[k]->p);
-                    a.p.x += d + d;
-                    ux[1] += ThreeParticleIteractionEnergy(crystal.back(), a.p, neighboors[j]->p, neighboors[k]->p);
-                    a.p.x -= d;
-                    a.p.y -= d;
-                    uy[0] += ThreeParticleIteractionEnergy(crystal.back(), a.p, neighboors[j]->p, neighboors[k]->p);
-                    a.p.y += d + d;
-                    uy[1] += ThreeParticleIteractionEnergy(crystal.back(), a.p, neighboors[j]->p, neighboors[k]->p);
-                    a.p.y -= d;
-                    a.p.z -= d;
-                    uz[0] += ThreeParticleIteractionEnergy(crystal.back(), a.p, neighboors[j]->p, neighboors[k]->p);
-                    a.p.z += d + d;
-                    uz[1] += ThreeParticleIteractionEnergy(crystal.back(), a.p, neighboors[j]->p, neighboors[k]->p);
-                    a.p.z -= d;
+                    ux[0] += ThreeParticleIteractionEnergy(crystal.back(), a.p - glm::dvec3(-d, 0., 0.), neighboors[j]->p, neighboors[k]->p);
+                    ux[1] += ThreeParticleIteractionEnergy(crystal.back(), a.p - glm::dvec3( d, 0., 0.), neighboors[j]->p, neighboors[k]->p);
+                    uy[0] += ThreeParticleIteractionEnergy(crystal.back(), a.p - glm::dvec3(0., -d, 0.), neighboors[j]->p, neighboors[k]->p);
+                    uy[1] += ThreeParticleIteractionEnergy(crystal.back(), a.p - glm::dvec3(0.,  d, 0.), neighboors[j]->p, neighboors[k]->p);
+                    uz[0] += ThreeParticleIteractionEnergy(crystal.back(), a.p - glm::dvec3(0., 0., -d), neighboors[j]->p, neighboors[k]->p);
+                    uz[1] += ThreeParticleIteractionEnergy(crystal.back(), a.p - glm::dvec3(0., 0.,  d), neighboors[j]->p, neighboors[k]->p);
                 }
             }
             lastF = a.f;
@@ -189,6 +187,10 @@ void Simulation::Update()
 double Simulation::TwoParticleIteractionEnergy(const Crystal &c, const glm::dvec3 &r1, const glm::dvec3 &r2)
 {
     double d = glm::length(r1 - r2);
+    if (d >= c.potentialCutoffR)
+    {
+        return 0.;
+    }
     return c.epsilon * c.A * (c.B * std::pow(d/c.zeroPotentialR, -c.r) - std::pow(d/c.zeroPotentialR, -c.q)) * std::exp(c.zeroPotentialR/(d - c.potentialCutoffR));
 }
 
@@ -257,12 +259,10 @@ void Simulation::Draw()
     int i = 0;
     for(const Atom& a : atoms)
     {
-        //double range = crystal.maxEnergy - crystal.minEnergy;
-        //float rate = (a.u - crystal.minEnergy) / range;
-        /*c.r = a.u >= 0. ? rate : 0;
-        c.g = 0.;
-        c.b = a.u < 0. ? rate : 0;*/
         c.b = i == selAtom? 1.f : 0.f;
+        if (selAtom >= 0) {
+            c.g = std::find(atoms[selAtom].neighboors.begin(), atoms[selAtom].neighboors.end(), &a) != atoms[selAtom].neighboors.end() ? 1.f : 0.f;
+        }
         c.r = a.isBoundary ? 1.f : 0.f;
         widget->DrawCube(a.p, c, Crystal::atomSize);
         i++;
@@ -305,31 +305,11 @@ void Simulation::keyPressEvent(QKeyEvent *event)
             emit(ActiveTimestepChanged(static_cast<int>(curTimestep + 1)));
         }
     }
-
-    if (keysState[KeyToAddr(Qt::Key_Shift)] && !keysBlock[KeyToAddr(Qt::Key_Shift)])
-    {
-        keysBlock[KeyToAddr(Qt::Key_Shift)] = true;
-        selAtom = -1;
-        glm::dvec3 m = widget->ScreenToWorld(mouse, view);
-        qDebug("s: %d, %d, m: %f, %f, %f, pos: %f, %f, %f", mouse.x(), mouse.y(), m.x, m.y, m.z, camera.p.x, camera.p.y, camera.p.z);
-        for(uint i = 0; i < crystal[curTimestep].atoms.size(); i++)
-        {
-            if (glm::length(crystal[curTimestep].atoms[i].p - m) < 2 * Crystal::atomSize) {
-               selAtom = static_cast<int>(i);
-               selAtomPlotted = false;
-               break;
-            }
-        }
-    }
 }
 
 void Simulation::keyReleaseEvent(QKeyEvent *event)
 {
     keysState[KeyToAddr(event->key())] = false;
-    if (!keysState[KeyToAddr(Qt::Key_Shift)])
-    {
-        keysBlock[KeyToAddr(Qt::Key_Shift)] = false;
-    }
 }
 
 void Simulation::mouseMoveEvent(QMouseEvent *event)
@@ -346,6 +326,19 @@ void Simulation::mouseMoveEvent(QMouseEvent *event)
 void Simulation::mousePressEvent(QMouseEvent *event)
 {
     mouse = event->pos();
+    if (event->button() != Qt::RightButton) {
+        return;
+    }
+    selAtom = -1;
+    glm::dvec3 m = widget->ScreenToWorld(mouse, view);
+    for(uint i = 0; i < crystal[curTimestep].atoms.size(); i++)
+    {
+        if (glm::length(crystal[curTimestep].atoms[i].p - m) < 2 * Crystal::atomSize) {
+           selAtom = static_cast<int>(i);
+           selAtomPlotted = false;
+           break;
+        }
+    }
 }
 
 void Simulation::mouseReleaseEvent(QMouseEvent *event)
