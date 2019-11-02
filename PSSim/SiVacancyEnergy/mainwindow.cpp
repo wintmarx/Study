@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include <string>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -33,6 +34,7 @@ void MainWindow::UpdateLoadingBar(float percentage)
 void MainWindow::UpdateSlider(int value)
 {
     ui->horizontalSlider->setValue(value);
+    ui->curStepEdit->setText(QString::number(ui->horizontalSlider->value()));
 }
 
 void MainWindow::DrawPlot(const QVector<double> *keys, const QVector<double> *values, const QColor *color)

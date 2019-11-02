@@ -38,6 +38,8 @@ class Crystal
     static constexpr double epsilon = 2.17;
     static constexpr double r = 4;
     static constexpr double q = 0;
+    double potentialEnergy = 0.;
+    double kineticEnergy = 0.;
     glm::uvec3 sizeInCells;
     Crystal(const glm::dvec3 &p, const glm::uvec3 &s);
     void AddLattice(uint i, uint j, uint k);
