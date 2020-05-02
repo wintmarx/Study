@@ -22,6 +22,7 @@ public:
     void DrawTriangle(const glm::dvec3 &p, const glm::vec3 &c);
     void DrawCube(const glm::dvec3 &p, const glm::vec3 &c, double s = 1., bool lines = false);
     void DrawLine(const glm::dvec3 &b, const glm::dvec3 &e, const glm::vec3 &c);
+    void DrawSphere(const glm::dvec3 &p, const double r, const glm::vec4 &c);
     glm::dvec3 ScreenToWorld(const QPoint &screen, const glm::dmat4 &modelview);
     glm::ivec4 viewport;
     glm::dmat4 proj;
