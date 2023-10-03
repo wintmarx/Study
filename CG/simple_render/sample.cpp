@@ -21,6 +21,8 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glut.h>
+#include <glm/glm.hpp>
+#include <glm/ext.hpp>
 
 
 //	This is a sample OpenGL / GLUT program
@@ -465,7 +467,7 @@ Display( )
 
 	glDisable( GL_DEPTH_TEST );
 	glColor3f( 0.f, 1.f, 1.f );
-	//DoRasterString( 0.f, 1.f, 0.f, (char *)"Text That Moves" );
+	// DoRasterString( 0.f, 1.f, 0.f, (char *)"Text That Moves" );
 
 
 	// draw some gratuitous text that is fixed on the screen:
@@ -812,15 +814,29 @@ InitGraphics( )
 //  memory so that they can be played back efficiently at a later time
 //  with a call to glCallList( )
 
+void DrawCircle(const glm::vec3& pos, double radius) {
+	glBegin( GL_TRIANGLE_FAN );
+	int circle_steps_sz = 15;
+	double circle_step = 2 * glm::pi<double>() / (circle_steps_sz);
+	glVertex3d(pos.x, pos.y, pos.z);
+	for (int i = 0; i <= circle_steps_sz; i++) {
+		double angle = i * circle_step;
+		glVertex3d(pos.x + radius * cos(angle), pos.y + sin(angle), pos.z);
+	}
+
+	glEnd( );
+}
+
+void DrawCylinder() {
+
+}
+
 void
 InitLists( )
 {
 	if (DebugOn != 0)
 		fprintf(stderr, "Starting InitLists.\n");
 
-	float dx = BOXSIZE / 2.f;
-	float dy = BOXSIZE / 2.f;
-	float dz = BOXSIZE / 2.f;
 	glutSetWindow( MainWindow );
 
 	// create the object:
@@ -828,54 +844,10 @@ InitLists( )
 	BoxList = glGenLists( 1 );
 	glNewList( BoxList, GL_COMPILE );
 
-		glBegin( GL_QUADS );
-
-			glColor3f( 1., 0., 0. );
-
-				glNormal3f( 1., 0., 0. );
-					glVertex3f(  dx, -dy,  dz );
-					glVertex3f(  dx, -dy, -dz );
-					glVertex3f(  dx,  dy, -dz );
-					glVertex3f(  dx,  dy,  dz );
-
-				glNormal3f(-1., 0., 0.);
-					glVertex3f( -dx, -dy,  dz);
-					glVertex3f( -dx,  dy,  dz );
-					glVertex3f( -dx,  dy, -dz );
-					glVertex3f( -dx, -dy, -dz );
-
-			glColor3f( 0., 1., 0. );
-
-				glNormal3f(0., 1., 0.);
-					glVertex3f( -dx,  dy,  dz );
-					glVertex3f(  dx,  dy,  dz );
-					glVertex3f(  dx,  dy, -dz );
-					glVertex3f( -dx,  dy, -dz );
-
-				glNormal3f(0., -1., 0.);
-					glVertex3f( -dx, -dy,  dz);
-					glVertex3f( -dx, -dy, -dz );
-					glVertex3f(  dx, -dy, -dz );
-					glVertex3f(  dx, -dy,  dz );
-
-			glColor3f(0., 0., 1.);
-
-				glNormal3f(0., 0., 1.);
-					glVertex3f(-dx, -dy, dz);
-					glVertex3f( dx, -dy, dz);
-					glVertex3f( dx,  dy, dz);
-					glVertex3f(-dx,  dy, dz);
-
-				glNormal3f(0., 0., -1.);
-					glVertex3f(-dx, -dy, -dz);
-					glVertex3f(-dx,  dy, -dz);
-					glVertex3f( dx,  dy, -dz);
-					glVertex3f( dx, -dy, -dz);
-
-		glEnd( );
+	DrawCircle({-1, 0, 0}, 0.5);
+	DrawCircle({1, 0, 0}, 0.5);
 
 	glEndList( );
-
 
 	// create the axes:
 
